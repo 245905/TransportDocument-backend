@@ -1,4 +1,4 @@
-package com.tui.transport.Utils.CheckToken;
+package com.tui.transport.utils.CheckToken;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

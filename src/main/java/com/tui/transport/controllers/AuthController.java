@@ -6,7 +6,7 @@ import com.tui.transport.dto.UserResetPasswordDto;
 import com.tui.transport.repositories.UserRepository;
 import com.tui.transport.services.SecurityService;
 import com.tui.transport.services.TokenService;
-import com.tui.transport.Utils.CheckToken.CheckToken;
+import com.tui.transport.utils.CheckToken.CheckToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

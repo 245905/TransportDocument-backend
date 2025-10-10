@@ -1,4 +1,4 @@
-package com.tui.transport.Utils.CheckToken;
+package com.tui.transport.utils.CheckToken;
 
 import com.tui.transport.services.SecurityService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +17,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class CheckTokenAspect {
     private final SecurityService securityService;
 
-    @Around("@annotation(CheckToken)")
+    @Around("@annotation(com.tui.transport.utils.CheckToken.CheckToken)")
     public Object checkToken(ProceedingJoinPoint joinPoint) throws Throwable {
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) {
