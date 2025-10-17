@@ -6,7 +6,7 @@ import com.tui.transport.dto.UserResetPasswordDto;
 import com.tui.transport.repositories.UserRepository;
 import com.tui.transport.services.SecurityService;
 import com.tui.transport.services.TokenService;
-import com.tui.transport.utils.CheckToken.CheckToken;
+import com.tui.transport.annotations.CheckToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 @RequiredArgsConstructor()
 public class AuthController {
-
-    private final UserRepository userRepository;
     private final SecurityService securityService;
-    private final TokenService tokenService;
 
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@RequestBody UserLoginDto userLoginDto) {
@@ -40,7 +37,6 @@ public class AuthController {
         if(!securityService.sendResetCode(userResetPasswordDto.getEmail())) {
             return ResponseEntity.status(500).build();
         }
-        // For security reasons, we always return 200 OK even if the user does not exist
         return ResponseEntity.ok().build();
     }
 
@@ -55,8 +51,8 @@ public class AuthController {
 
     @CheckToken
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader(name = "Authorization") String token, @RequestBody String email) {
-        if(!securityService.logout(email, token)) {
+    public ResponseEntity<Void> logout(@RequestHeader(name = "Authorization") String token) {
+        if(!securityService.logout(token)) {
             return ResponseEntity.status(401).build();
         }
         return ResponseEntity.ok().build();

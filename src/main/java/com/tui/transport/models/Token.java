@@ -1,5 +1,6 @@
 package com.tui.transport.models;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,9 +15,10 @@ import java.time.LocalDateTime;
 public class Token {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    private String token;
     @ManyToOne
     private User user;
-    private Boolean repeating;
+    @Nullable
+    private String resetKey;
     private LocalDateTime expiryDate;
 }

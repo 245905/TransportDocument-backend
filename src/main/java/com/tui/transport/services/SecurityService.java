@@ -18,16 +18,16 @@ public class SecurityService {
     private final TokenService tokenService;
     public String hashPassword(String password) {
         // Simple hashing for demonstration purposes
-        return BCrypt.hashpw(password, BCrypt.gensalt());
+        return BCrypt.hashpw(password, "$2a$10$bUL3N6Jn8MxxZc6V9919Le");
     }
 
     public UserDto login(UserLoginDto userLoginDto) {
         userLoginDto.setPassword(this.hashPassword(userLoginDto.getPassword()));
         User user;
         if (userLoginDto.getEmail() != null) {
-            user = userRepository.findByUsername(userLoginDto.getEmail()).orElse(null);
+            user = userRepository.findByEmail(userLoginDto.getEmail()).orElse(null);
         } else {
-            user = userRepository.findByEmail(userLoginDto.getUsername()).orElse(null);
+            user = userRepository.findByUsername(userLoginDto.getUsername()).orElse(null);
         }
         if (user == null || !user.getPassword().equals(userLoginDto.getPassword())) {
             return null;
@@ -56,8 +56,8 @@ public class SecurityService {
         return userToUserDtoConverter.convert(user);
     }
 
-    public boolean logout(String email, String userToken) {
-        if (tokenService.validateToken(userToken, email)) {
+    public boolean logout(String userToken) {
+        if (tokenService.validateToken(userToken)) {
             tokenService.invalidateToken(userToken);
             return true;
         } else {

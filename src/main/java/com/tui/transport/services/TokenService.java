@@ -6,11 +6,15 @@ import com.tui.transport.models.User;
 import com.tui.transport.repositories.ResetTokenRepository;
 import com.tui.transport.repositories.TokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,22 +23,33 @@ public class TokenService {
     private final ResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
 
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Async
     @Scheduled(fixedRate = 60*1000) // every minute
     public void cleanUpExpiredTokens() {
-        tokenRepository.deleteAll(tokenRepository.findAll().stream()
+        List<Token> tokensToDelete = tokenRepository.findAll().stream()
                 .filter(token -> token.getExpiryDate().isBefore(LocalDateTime.now()))
-                .filter(token -> !token.getRepeating())
-                .toList());
-        resetTokenRepository.deleteAll(resetTokenRepository.findAll().stream()
+                .filter(token -> token.getResetKey() != null) // those are "remember me" tokens
+                .toList();
+        tokenRepository.deleteAll(tokensToDelete);
+
+        List<Token> incorrectTokens = tokenRepository.findAll().stream()
+                .filter(token -> token.getUser() == null)
+                .toList();
+        tokenRepository.deleteAll(incorrectTokens);
+
+        List<ResetToken> resetTokensToDelete = resetTokenRepository.findAll().stream()
                 .filter(token -> token.getExpiryDate().isBefore(LocalDateTime.now()))
-                .toList());
+                .toList();
+        resetTokenRepository.deleteAll(resetTokensToDelete);
+        logger.info("Cleaned up {} expired tokens, {} incorrect tokens and {} expired reset tokens", tokensToDelete.size(), incorrectTokens.size(), resetTokensToDelete.size());
     }
 
-    public Token generateNewToken(User user, boolean repeating) {
+    public Token generateNewToken(User user, boolean rememberMe) {
         Token token = new Token();
         token.setUser(user);
-        token.setRepeating(repeating);
+        token.setResetKey(rememberMe ? UUID.randomUUID().toString() : null);
         token.setExpiryDate(LocalDateTime.now().plusMinutes(30));
         return tokenRepository.save(token);
     }
@@ -42,11 +57,6 @@ public class TokenService {
     public boolean validateToken(String tokenId) {
         Token token = tokenRepository.findById(tokenId).orElse(null);
         return token != null && token.getExpiryDate().isAfter(LocalDateTime.now());
-    }
-
-    public boolean validateToken(String tokenId, String email) {
-        Token token = tokenRepository.findById(tokenId).orElse(null);
-        return token != null && token.getExpiryDate().isAfter(LocalDateTime.now()) && token.getUser().getEmail().equals(email);
     }
 
     public void invalidateToken(String tokenId) {
