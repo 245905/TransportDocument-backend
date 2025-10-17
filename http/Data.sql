@@ -1,0 +1,1 @@
+INSERT INTO public."app-user" (email, password, username) VALUES ('test@email.com', '$2a$10$bUL3N6Jn8MxxZc6V9919LeqUV9N1HA9IP1l6ai1/4X3AUjEa4gcBa', 'TEST_USER') --Password: password

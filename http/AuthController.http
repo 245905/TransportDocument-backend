@@ -1,0 +1,53 @@
+### User login
+POST https://localhost:4000/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "test@email.com",
+  "password": "password",
+  "isRememberMe": false
+}
+
+> {%
+    if(response.status !== 200) {
+      throw new Error(`Expected status 200 but got ${response.status}`);
+    }
+    client.global.set("token", response.body.loginToken)
+    console.log(client.global)
+ %}
+
+### Admin login
+POST http://localhost:4000/auth/admin/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "test@email.com",
+  "password": "password",
+  "isRememberMe": false
+}
+
+> {%
+    if(response.status !== 200) {
+        throw new Error(`Expected status 200 but got ${response.status}`);
+    }
+    client.global.set("token", response.body.loginToken)
+    console.log(client.global)
+%}
+
+### Logout
+< {%
+  console.log(client.global);
+%}
+
+POST http://localhost:4000/auth/logout HTTP/1.1
+Content-Type: application/json
+Authorization: {{token}}
+
+
+### Get reset token
+POST http://localhost:4000/auth/getResetCode HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "julek.zolich@gmail.com"
+}
