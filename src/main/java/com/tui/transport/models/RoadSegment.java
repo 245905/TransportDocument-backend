@@ -16,7 +16,9 @@ public class RoadSegment {
 
     private int sequence; //Numer odcinka na trasie
 
+    @Embedded
     private Location startLocation;
+    @Embedded
     private Location endLocation;
 
     private int distance;

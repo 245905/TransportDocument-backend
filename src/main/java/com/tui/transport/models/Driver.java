@@ -7,7 +7,6 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table
 public class Driver {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +30,7 @@ public class Driver {
 
     private String passwordHash;
 
-    @Embedded
+    @OneToOne
     private DriverQualifications driverQualifications;
 
     @OneToOne

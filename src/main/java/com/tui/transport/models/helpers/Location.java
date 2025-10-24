@@ -1,9 +1,11 @@
 package com.tui.transport.models.helpers;
 
 import jakarta.persistence.Embeddable;
+import lombok.Data;
 
 @Embeddable
+@Data
 public class Location {
-    public float x;
-    public float y;
+    private float x;
+    private float y;
 }

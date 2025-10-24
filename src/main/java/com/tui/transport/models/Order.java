@@ -6,11 +6,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "app-orders")
 public class Order extends TimeLoggedClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +30,8 @@ public class Order extends TimeLoggedClass {
 
     private OrderRequirements orderRequirements;
     private OrderStatus orderStatus;
+
+    private LocalDateTime finishDate;
 
     @ManyToOne
     private Driver driver;

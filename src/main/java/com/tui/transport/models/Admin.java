@@ -18,6 +18,4 @@ public class Admin extends TimeLoggedClass{
 
     private String username;
     private String passwordHash;
-
-
 }

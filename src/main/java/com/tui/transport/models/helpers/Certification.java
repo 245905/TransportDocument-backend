@@ -5,6 +5,6 @@ import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class Certification {
-    private boolean isAquired = false;
+    private boolean isAcquired = false;
     private Period validityPeriod;
 }
