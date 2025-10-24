@@ -1,43 +1,48 @@
 package com.tui.transport.models;
 
-import jakarta.annotation.Nullable;
+import com.tui.transport.models.helpers.TimeLoggedClass;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
-public class Order {
+public class Order extends TimeLoggedClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true)
-    private String orderNumber;
-    private String orderType;
-    private String orderStatus;
+    private String referenceNumber;
+    private String goodsDescription;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime creationDate;
+    private String loadCity;
+    private String loadAddress;
 
-    private String destinationAddress;
-    private LocalDateTime orderDate;
+    private String unloadCity;
+    private String unloadAddress;
 
-    private String startingAddress;
+    private Long distance;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<Attachment> attachments;
+    private OrderRequirements orderRequirements;
+    private OrderStatus orderStatus;
 
-    @Nullable
     @ManyToOne
-    private User driver;
+    private Driver driver;
+    @ManyToOne
+    private Truck truck;
+    @ManyToOne
+    private Trailer trailer;
 
-    @PrePersist
-    void onCreate() {
-        if (creationDate == null) {
-            creationDate = LocalDateTime.now();
-        }
+    public enum OrderStatus {
+        Finished,
+        InProgress,
+        Cancelled,
+        OnHold,
+        Issue
     }
 }

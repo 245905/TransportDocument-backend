@@ -5,26 +5,18 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-
+@Entity
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Entity
-public class Attachment extends TimeLoggedClass {
+public class Report extends TimeLoggedClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String filename;
-    private String filePath;
-    private String mimeType;
-
-    @ManyToOne
+    @OneToOne
     private Order order;
 
-    @ManyToOne
-    private Driver driver;
-
-    @ManyToOne
-    private Event event;
-
+    public Long totalDistance;
+    public Long totalFuel;
+    public Long totalEmission;
 }

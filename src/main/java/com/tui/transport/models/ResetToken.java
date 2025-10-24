@@ -13,6 +13,6 @@ public class ResetToken {
     @Id
     private String token;
     @ManyToOne
-    private User user;
+    private Driver driver;
     private LocalDateTime expiryDate;
 }
