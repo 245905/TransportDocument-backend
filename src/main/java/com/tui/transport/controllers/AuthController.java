@@ -5,6 +5,7 @@ import com.tui.transport.dto.UserLoginDto;
 import com.tui.transport.dto.UserResetPasswordDto;
 import com.tui.transport.services.SecurityService;
 import com.tui.transport.services.TokenService;
+import jakarta.annotation.security.RolesAllowed;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController()
@@ -26,6 +28,8 @@ public class AuthController {
     private final SecurityService securityService;
     private final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private final TokenService tokenService;
+
+    private final JwtDecoder jwtDecoder;
 
 
     @PostMapping("/login")
@@ -84,9 +88,9 @@ public class AuthController {
         Authentication auth = driverAuthenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword())
         );
-        logger.debug("Token requested for user: {}", auth.getName());
+        logger.info("Token requested for user: {}", auth.getName());
         String token = tokenService.generateToken(auth);
-        logger.debug("Token generated for user: {}", token);
+        logger.info("Token generated for user: {}", token);
         return token;
     }
 
@@ -95,9 +99,31 @@ public class AuthController {
         Authentication auth = adminAuthenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword())
         );
-        logger.debug("Token requested for admin: {}", auth.getName());
+        logger.info("Token requested for admin: {}", auth.getName());
         String token = tokenService.generateAdminToken(auth);
-        logger.debug("Token generated for admin: {}", token);
+        logger.info("Token generated for admin: {}", token);
         return token;
+    }
+
+    @RolesAllowed("ADMIN")
+    @GetMapping("/admin/test")
+    public String adminTest(@RequestHeader(name = "Authorization") String token) {
+        logger.info(token.substring(7));
+        logger.info(jwtDecoder.decode(token.substring(7)).getClaims().toString());
+        logger.info("Admin test");
+        return "Admin test";
+    }
+
+    @RolesAllowed("DRIVER")
+    @GetMapping("/test")
+    public String userTest() {
+        logger.info("User test");
+        return "User test";
+    }
+
+    @GetMapping("/none/test")
+    public String noRoleTest() {
+        logger.info("No role test");
+        return "No role test";
     }
 }

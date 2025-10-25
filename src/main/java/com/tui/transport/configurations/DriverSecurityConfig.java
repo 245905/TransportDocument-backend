@@ -34,7 +34,7 @@ public class DriverSecurityConfig {
             String principal = driver.getEmail() != null ? driver.getEmail() : driver.getPhoneNumber();
             return User.withUsername(principal)
                     .password(driver.getPasswordHash())
-                    .roles("USER")
+                    .roles("DRIVER")
                     .build();
         };
     }
