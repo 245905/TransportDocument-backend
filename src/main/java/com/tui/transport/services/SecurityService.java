@@ -4,8 +4,8 @@ import com.tui.transport.converters.UserToUserDtoConverter;
 import com.tui.transport.dto.UserDto;
 import com.tui.transport.dto.UserLoginDto;
 import com.tui.transport.dto.UserResetPasswordDto;
-import com.tui.transport.models.User;
-import com.tui.transport.repositories.UserRepository;
+import com.tui.transport.models.Driver;
+import com.tui.transport.repositories.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
@@ -13,9 +13,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class SecurityService {
-    private final UserRepository userRepository;
+    private final DriverRepository driverRepository;
     private final UserToUserDtoConverter userToUserDtoConverter;
-    private final TokenService tokenService;
     public String hashPassword(String password) {
         // Simple hashing for demonstration purposes
         return BCrypt.hashpw(password, "$2a$10$bUL3N6Jn8MxxZc6V9919Le");
@@ -23,49 +22,56 @@ public class SecurityService {
 
     public UserDto login(UserLoginDto userLoginDto) {
         userLoginDto.setPassword(this.hashPassword(userLoginDto.getPassword()));
-        User user;
+        Driver driver;
         if (userLoginDto.getEmail() != null) {
-            user = userRepository.findByEmail(userLoginDto.getEmail()).orElse(null);
+            driver = driverRepository.findByEmail(userLoginDto.getEmail()).orElse(null);
         } else {
-            user = userRepository.findByUsername(userLoginDto.getUsername()).orElse(null);
+            driver = driverRepository.findByPhoneNumber(userLoginDto.getPhoneNumber()).orElse(null);
         }
-        if (user == null || !user.getPassword().equals(userLoginDto.getPassword())) {
+        if (driver == null || !driver.getPasswordHash().equals(userLoginDto.getPassword())) {
             return null;
         }
-        return userToUserDtoConverter.convert(user);
+        return userToUserDtoConverter.convert(driver);
     }
 
     public boolean sendResetCode(String email) {
-        User user = userRepository.findByUsername(email).orElse(null);
-        return user != null && tokenService.generateResetToken(user);
+        Driver driver = driverRepository.findByPhoneNumber(email).orElse(null);
+        return driver != null;
     }
 
     public UserDto resetPassword(UserResetPasswordDto userResetPasswordDto) {
         if (userResetPasswordDto.getEmail() == null || userResetPasswordDto.getNewPassword() == null || userResetPasswordDto.getToken() == null) {
             return null;
         }
-        if (!tokenService.validateResetToken(userResetPasswordDto.getEmail(), userResetPasswordDto.getToken())) {
+//        if (!tokenService.validateResetToken(userResetPasswordDto.getEmail(), userResetPasswordDto.getToken())) {
+//            return null;
+//        }
+        Driver driver = driverRepository.findByPhoneNumber(userResetPasswordDto.getEmail()).orElse(null);
+        if (driver == null) {
             return null;
         }
-        User user = userRepository.findByUsername(userResetPasswordDto.getEmail()).orElse(null);
-        if (user == null) {
-            return null;
-        }
-        user.setPassword(this.hashPassword(userResetPasswordDto.getNewPassword()));
-        userRepository.save(user);
-        return userToUserDtoConverter.convert(user);
+        driver.setPasswordHash(this.hashPassword(userResetPasswordDto.getNewPassword()));
+        driverRepository.save(driver);
+        return userToUserDtoConverter.convert(driver);
     }
 
     public boolean logout(String userToken) {
-        if (tokenService.validateToken(userToken)) {
-            tokenService.invalidateToken(userToken);
-            return true;
-        } else {
-            return false;
-        }
+//        if (tokenService.validateToken(userToken)) {
+//            tokenService.invalidateToken(userToken);
+//            return true;
+//        } else {
+//            return false;
+//        }
+        return false;
     }
 
     public void validateToken(String userToken) {
-        if(!tokenService.validateToken(userToken)) throw new RuntimeException("Invalid token");
+//        if(!tokenService.validateToken(userToken)) throw new RuntimeException("Invalid token");
     }
+
+    public Driver getUserFromToken(String token) {
+//        return tokenService.getUserFromToken(token);
+        return null;
+    }
+
 }
