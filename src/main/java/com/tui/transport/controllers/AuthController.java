@@ -1,21 +1,27 @@
 package com.tui.transport.controllers;
 
-import com.tui.transport.dto.UserDto;
-import com.tui.transport.dto.UserLoginDto;
-import com.tui.transport.dto.UserResetPasswordDto;
-import com.tui.transport.services.SecurityService;
+import com.tui.transport.converters.DriverToDriverDtoConverter;
+import com.tui.transport.dto.DriverDto;
+import com.tui.transport.dto.DriverResetPasswordDto;
+import com.tui.transport.dto.LoginDto;
+import com.tui.transport.models.Driver;
+import com.tui.transport.services.DriverService;
 import com.tui.transport.services.TokenService;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController()
 @RequestMapping("/auth")
@@ -25,91 +31,81 @@ public class AuthController {
     private final AuthenticationManager adminAuthenticationManager;
     @Qualifier("driverAuthenticationManager")
     private final AuthenticationManager driverAuthenticationManager;
-    private final SecurityService securityService;
+
     private final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+
     private final TokenService tokenService;
+    private final DriverService driverService;
 
-    private final JwtDecoder jwtDecoder;
-
+    private final DriverToDriverDtoConverter driverToDriverDtoConverter;
 
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@RequestBody UserLoginDto userLoginDto) {
-        if(userLoginDto.getPassword() == null || (userLoginDto.getPhoneNumber() == null && userLoginDto.getEmail() == null)) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<DriverDto> token(@RequestBody LoginDto loginDto) {
+        Authentication auth = driverAuthenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginDto.getEmail() == null ? loginDto.getPhoneNumber() : loginDto.getEmail(),
+                        loginDto.getPassword())
+        );
+
+        String token = tokenService.generateToken(auth);
+        Driver driver = driverService.getDriverFromAuth(auth);
+        DriverDto driverDto = driverToDriverDtoConverter.convert(driver);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Authorization", "Bearer: " + token);
+
+        if (loginDto.isRememberMe()) {
+            String resetToken = tokenService.generateResetToken(loginDto.getEmail(), loginDto.getPhoneNumber());
+            headers.put("X-Reset-Token", resetToken);
         }
-        UserDto userDto = securityService.login(userLoginDto);
-        if (userDto == null) {
-            return ResponseEntity.status(401).build();
-        }
-        return ResponseEntity.ok().body(userDto);
+
+        return ResponseEntity.ok()
+                .headers(HttpHeaders.readOnlyHttpHeaders(MultiValueMap.fromSingleValue(headers)))
+                .body(driverDto);
     }
 
     @PostMapping("/admin/login")
-    public ResponseEntity<UserDto> adminLogin(@RequestBody UserLoginDto userLoginDto) {
+    public ResponseEntity<Void> adminLogin(@RequestBody LoginDto loginDto) {
         Authentication auth = adminAuthenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword())
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
         );
-        String token = tokenService.generateAdminToken(auth);
-        return ResponseEntity.ok().header("Authorization", "Bearer: " + token).body(new UserDto());
+        String token = tokenService.generateToken(auth);
+        return ResponseEntity.ok().header("Authorization", "Bearer: " + token).build();
     }
 
-
     @PostMapping("/getResetCode")
-    public ResponseEntity<Void> getResetCode(@RequestBody UserResetPasswordDto userResetPasswordDto) {
-        if (userResetPasswordDto.getEmail() == null) {
+    public ResponseEntity<Void> getResetCode(@RequestBody DriverResetPasswordDto driverResetPasswordDto) {
+        if (driverResetPasswordDto.getEmail() == null) {
             return ResponseEntity.badRequest().build();
         }
-        if(!securityService.sendResetCode(userResetPasswordDto.getEmail())) {
-            return ResponseEntity.status(500).build();
-        }
+//        if(!securityService.sendResetCode(driverResetPasswordDto.getEmail())) {
+//            return ResponseEntity.status(500).build();
+//        }
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/resetPassword")
-    public ResponseEntity<UserDto> resetPassword(@RequestBody UserResetPasswordDto userResetPasswordDto) {
-        UserDto userDto = securityService.resetPassword(userResetPasswordDto);
-        if (userDto == null) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<DriverDto> resetPassword(@RequestBody DriverResetPasswordDto driverResetPasswordDto) {
+//        DriverDto userDto = securityService.resetPassword(driverResetPasswordDto);
+//        if (userDto == null) {
+//            return ResponseEntity.status(401).build();
+//        }
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader(name = "Authorization") String token) {
-        if(!securityService.logout(token)) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<Void> logout() {
+//        if(!securityService.logout(token)) {
+//            return ResponseEntity.status(401).build();
+//        }
         return ResponseEntity.ok().build();
-    }
-
-    //example, use this template for login
-    @PostMapping("/token")
-    public String token(@RequestBody UserLoginDto userLoginDto) {
-        Authentication auth = driverAuthenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword())
-        );
-        logger.info("Token requested for user: {}", auth.getName());
-        String token = tokenService.generateToken(auth);
-        logger.info("Token generated for user: {}", token);
-        return token;
-    }
-
-    @PostMapping("/admin/token")
-    public String adminToken(@RequestBody UserLoginDto userLoginDto) {
-        Authentication auth = adminAuthenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword())
-        );
-        logger.info("Token requested for admin: {}", auth.getName());
-        String token = tokenService.generateAdminToken(auth);
-        logger.info("Token generated for admin: {}", token);
-        return token;
     }
 
     @RolesAllowed("ADMIN")
     @GetMapping("/admin/test")
     public String adminTest(@RequestHeader(name = "Authorization") String token) {
         logger.info(token.substring(7));
-        logger.info(jwtDecoder.decode(token.substring(7)).getClaims().toString());
         logger.info("Admin test");
         return "Admin test";
     }
@@ -117,13 +113,6 @@ public class AuthController {
     @RolesAllowed("DRIVER")
     @GetMapping("/test")
     public String userTest() {
-        logger.info("User test");
         return "User test";
-    }
-
-    @GetMapping("/none/test")
-    public String noRoleTest() {
-        logger.info("No role test");
-        return "No role test";
     }
 }
