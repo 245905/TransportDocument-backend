@@ -29,8 +29,8 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<URL> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
-        Resource output = fileService.saveFile(file);
+    public ResponseEntity<URL> uploadFile(@RequestHeader(name = "Authorization") String token, @RequestParam("file") MultipartFile file) throws IOException {
+        Resource output = fileService.saveFile(token, file);
         if (output == null) {
             return ResponseEntity.internalServerError().build();
         }
