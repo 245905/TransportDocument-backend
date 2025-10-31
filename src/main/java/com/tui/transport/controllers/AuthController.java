@@ -1,11 +1,13 @@
 package com.tui.transport.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tui.transport.converters.DriverToDriverDtoConverter;
 import com.tui.transport.dto.DriverDto;
 import com.tui.transport.dto.DriverResetPasswordDto;
 import com.tui.transport.dto.LoginDto;
 import com.tui.transport.models.Driver;
 import com.tui.transport.services.DriverService;
+import com.tui.transport.services.SmsService;
 import com.tui.transport.services.TokenService;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +37,7 @@ public class AuthController {
 
     private final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
+    private final SmsService smsService;
 
     private final TokenService tokenService;
     private final DriverService driverService;
@@ -114,5 +118,26 @@ public class AuthController {
     @GetMapping("/test")
     public String userTest() {
         return "User test";
+    }
+
+
+    @PostMapping("/mfa/sendCode")
+    public ResponseEntity<Void> sendCode(@RequestBody Map<String, String> body) throws JsonProcessingException {
+        String phone = body.get("phone_number");
+        smsService.sendCode(phone);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/mfa/verifyCode")
+    public ResponseEntity<Void> verifyCode(@RequestBody Map<String, String> body) {
+        String phone = body.get("phone_number");
+        String code = body.get("code");
+        boolean result = smsService.verifyCode(phone, code);
+
+        if(result) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
 }
